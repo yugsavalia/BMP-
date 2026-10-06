@@ -172,12 +172,6 @@ Other analysis scripts, run by hand:
 | `fig_planners.py` | Fig. 4: J(K) under three planners at M = 40 (also run by `reproduce.py`) |
 | `plot_routes.py` | A route snapshot for any (M, Emax, K, seed, time) |
 
-## `legacy/`
-
-These scripts come from earlier formulations of the project: the `T_s/t_c` crossing estimator, the C3
-dwell-memory probe, an older grid runner, and the first version of criterion (5). The final paper and
-`reproduce.py` use none of them. Their imports have been updated for the new layout.
-
 ---
 
 ## Checked against the paper
