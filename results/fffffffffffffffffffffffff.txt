@@ -1,0 +1,23 @@
+PS C:\Users\HELLO\OneDrive\Desktop\paper_implementation> python reproduce.py --out results
+[ok] grid_final           0.1s  -> single analysis file for everything below   (results\grid_final.txt)
+[ok] table4               0.3s  -> Table IV and the Sec. VII-B statistics   (results\table4.txt)
+[ok] estimators           0.2s  -> Appendix: choice of estimator   (results\estimators.txt)
+[ok] strand               0.4s  -> Table V, Proposition 6 evaluation   (results\strand.txt)
+[ok] criterion            0.4s  -> Table VIII (global surrogate test, measured inputs)   (results\criterion.txt)
+[ok] exante               9.2s  -> Sec. VII-I ex-ante commute inputs   (results\exante.txt)
+[ok] criterion_exante     0.4s  -> Sec. VII-I: criterion with ex-ante inputs at the commute fixed point   (results\criterion_exante.txt)
+[ok] reach_bracket        0.2s  -> Sec. V-A / VII-B reach bracket and the K_flight comparison   (results\reach_bracket.txt)
+[ok] baseline             0.4s  -> Table IX (planner robustness, primary grid)   (results\baseline.txt)
+[ok] paired_diff          4.8s  -> Sec. VII-J paired planner-agreement differences   (results\paired_diff.txt)
+[ok] perturb_inputs       0.3s  -> Sec. VII-I sensitivity to the known physical inputs   (results\perturb_inputs.txt)
+[ok] hetero               0.2s  -> Sec. VII-C reserved-sortie allocation vs equal shares   (results\hetero.txt)
+[ok] depot                1.7s  -> Table (depot position), Sec. VII depot subsection   (results\depot.txt)
+[ok] cluster              4.8s  -> Sec. VII-J published competitor (Rahimi & Shafieinejad cluster patrol) vs SA   (results\cluster.txt)
+[ok] baseline_cluster     0.3s  -> Table IX cluster-patrol rows (primary grid)   (results\baseline_cluster.txt)
+[ok] baseline_cluster_m40   0.2s  -> Table IX cluster-patrol row (M=40)   (results\baseline_cluster_m40.txt)
+[ok] m40_cp_final         0.0s  -> M=40 CP-SAT file (paper default budget, ring converged budget)
+[ok] baseline_m40         0.2s  -> Table IX (M=40 three-planner rows)   (results\baseline_m40.txt)
+[ok] bootstrap           22.2s  -> all 95% intervals in Sec. VII-B, VII-J; per-cell intervals   (results\bootstrap.txt)
+[ok] figure_planners      1.9s  -> Fig. (planner robustness)   (results\figure_planners.txt)
+
+all outputs in C:\Users\HELLO\OneDrive\Desktop\paper_implementation\results

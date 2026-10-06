@@ -1,0 +1,2 @@
+patrol~SA  minus  SA~rule        mean diff +0.139  95% [+0.106, +0.171]  n=216
+patrol~SA  minus  patrol~rule    mean diff +0.111  95% [+0.083, +0.139]  n=216

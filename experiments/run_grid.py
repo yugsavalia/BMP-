@@ -1,0 +1,171 @@
+"""run_grid.py -- resumable, parallel M x K x Emax x layout x seed sweep -> CSV.
+
+usage: python run_grid.py out.csv --layouts paper ring core --M 50 100 200 400 \
+         --Emax 1.5e6 3e6 6e6 --seeds 1-12 --coord exclude --iters 1200 --procs 8
+K range per cell is auto: [max(1, floor(0.5*Kreach)) .. ceil(1.5*Kreach)] from the
+instance geometry, so higher budgets get wider K ranges without hand-editing.
+"""
+import os, sys; sys.path[:0] = [os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", d) for d in ("sim", "experiments", "analysis")]  # repo-local imports
+import argparse, csv, os, sys, itertools, math, time
+import numpy as np
+from multiprocessing import Pool
+from dyn_env import DynParams, DynSim, SensorField
+from sa_sortie import build_sa_planner
+
+FIELDS = ["layout","M","Emax","K","seed","coord","replan","divert","q","belief","tau","planner","L","Th","J","n_diverts","J_age","J_event","n_replans","n_never","share_never","n_reach_inf",
+          "K_reach_i","K_commute_i","r_max","r_c","rmax_over_rc","regime_bnd","P_bar","dup_frac",
+          "trunc_frac","empty_frac","T_s_over_t_c","mean_n","catch_rate","T_rev","n_sorties","secs"]
+
+def k_range(layout, M, Emax, seed, L=None):
+    p = DynParams(M=M, Emax=Emax, layout=layout, **({"L": L} if L else {}))
+    F = SensorField(p, np.random.default_rng(seed))
+    r = np.linalg.norm(F.pos - p.home, axis=1).max()
+    Kr = p.v*(1-p.rho)*Emax/(2*p.Pf*r + p.v*p.Ph*p.B_bits/p.R)
+    # never schedule K where NO sensor is reachable (ring layouts): J is infinite there
+    r_min = np.linalg.norm(F.pos - p.home, axis=1).min()
+    K_any = p.v*(1-p.rho)*Emax/(2*p.Pf*r_min + p.v*p.Ph*p.B_bits/p.R)
+    hi = min(int(math.ceil(1.5*Kr)), int(math.floor(K_any)))
+    return list(range(max(1, int(0.5*Kr)), max(hi, max(1, int(0.5*Kr))) + 1))
+
+def one(args):
+    layout, M, Emax, K, seed, coord, replan, divert, q, belief, tau, planner, L, Th, iters = args
+    # planner spec: "sa" | "sa_norepair" | "greedy" | "sa_nolambda" | "sa_launchdwell"
+    p = DynParams(M=M, K=K, Emax=Emax, layout=layout, coord_mode=coord, L=L,
+                  event_corr_q=q, belief_mode=belief,
+                  learn_lambda=(planner != "sa_nolambda"),
+                  tau_e_lo=(tau*60*2/3 if tau > 0 else DynParams.tau_e_lo),   # tau = MEAN lifetime in minutes;
+                  tau_e_hi=(tau*60*4/3 if tau > 0 else DynParams.tau_e_hi),   # U(2/3, 4/3)*tau keeps the default spread
+                  replan_mode="per_leg" if replan != "launch" else "launch",
+                  replan_planner="greedy" if replan == "per_leg_greedy" else "same",
+                  divert_mode=bool(divert),
+                  replan_iters=60, T_horizon=Th, T_burnin=3*3600.0)
+    t = time.time()
+    if planner.startswith("cpsat_d"):         # external baseline: CP-SAT, cold, deterministic budget
+        if replan != "launch" or divert:
+            raise ValueError("cpsat planners are launch-time only")
+        from milp_sortie import build_milp_planner
+        pl = build_milp_planner(dtime=float(planner[len("cpsat_d"):]))
+    elif planner in ("cyc", "cyc_noopt", "cyc_sector0"):   # option C4: optimised cyclic schedule (cyclic_sched.py)
+        if replan != "launch" or divert:
+            raise ValueError("cyc planners are launch-time only")
+        from cyclic_sched import build_cyclic_planner
+        pl = build_cyclic_planner(noopt=(planner != "cyc"),
+                                  inits=(("sector",) if planner == "cyc_sector0" else None))
+    elif planner == "terr_due":                  # periodic territorial patrol, sqrt-weighted (territory_sa.py)
+        from territory_sa import build_territory_due_planner
+        pl = build_territory_due_planner()
+    elif planner in ("sa_terr_km", "sa_terr_bal"):   # SA inside fixed territories (territory_sa.py)
+        from territory_sa import build_territory_sa_planner
+        pl = build_territory_sa_planner(variant=planner.split("_")[-1], iters=iters, seed_base=seed)
+    elif planner == "cluster_patrol":          # Rahimi & Shafieinejad (2024) clustering method, energy-constrained
+        if replan != "launch" or divert:
+            raise ValueError("cluster_patrol is launch-time only")
+        from rr_planner import build_cluster_planner
+        pl = build_cluster_planner()
+    elif planner == "liu_mpga":                # Liu et al. IoT-J 2022 MPGA, adapted (baselines/liu2022)
+        if replan != "launch" or divert:
+            raise ValueError("liu_mpga is launch-time only")
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "baselines", "liu2022"))
+        from liu_mpga import build_liu_planner
+        pl = build_liu_planner()
+    elif planner in ("rr_tour", "rr_sweep"):      # external baseline: age-blind patrol (rr_planner.py)
+        if replan != "launch" or divert:
+            raise ValueError("rr_* planners are launch-time only")
+        from rr_planner import build_rr_planner
+        pl = build_rr_planner("tour" if planner == "rr_tour" else "sweep")
+    elif planner == "greedy":
+        from dyn_env import greedy_ratio_planner as pl
+    elif planner == "sa_whittle":               # quadratic-in-age (Whittle-type) index, Kadota et al. 2018
+        p.index_mode = "whittle"; pl = build_sa_planner(iters=iters, seed_base=seed)
+    elif planner == "sa_sqrt":
+        p.index_mode = "sqrt"; pl = build_sa_planner(iters=iters, seed_base=seed)
+    elif planner == "sa_norepair":
+        pl = build_sa_planner(iters=iters, seed_base=seed, repair_p=0.0)
+    else:
+        pl = build_sa_planner(iters=iters, seed_base=seed)
+    sim = DynSim(p, pl, seed=seed, coordinate=(coord != "none"))
+    if hasattr(pl, "bind_sim"): pl.bind_sim(sim)       # planners that need the drone index
+    if planner == "sa_launchdwell":   # ablation: the old launch-time dwell estimate (no arrival correction)
+        sim._Ts_mean = 0.0; sim._launch_dwell_only = True
+    m = sim.run()
+    if planner.startswith("cyc") and getattr(pl, "state", {}).get("info"):
+        inf = pl.state["info"]
+        print(f"  [cyc] {planner} {layout} M={M} E={Emax:.1e} K={K} s={seed}: init={inf['init']} "
+              f"J_sur={inf['J_sur']:.4e} J_sur_start={ {k: round(v, 1) for k, v in inf['J_sur_start'].items()} } "
+              f"J_sim={m['J_timeavg']:.4e} J_age={m['J_age']:.4e} classes={inf['classes']} build={inf['build_s']:.1f}s", flush=True)
+    if hasattr(pl, "stats"):
+        s_ = pl.stats
+        print(f"  [cpsat] {layout} M={M} K={K} s={seed}: decisions={s_['n']} optimal={s_['optimal']} "
+              f"fallback={s_['fallback']} mean_gap_nonopt={s_['gap_sum']/max(s_['n']-s_['optimal'],1):.3f}", flush=True)
+    if os.environ.get("EXPORT_NODES"):   # per-node visit counts + weights + radii for the f_i ∝ sqrt(w/c) check
+        import numpy as _np
+        _np.savez_compressed(f"nodes_{layout}_M{M}_E{int(Emax)}_K{K}_s{seed}_{coord}_{replan}.npz",
+            visits=sim._visits, w=sim.field.wi_base, r=_np.linalg.norm(sim.field.pos - p.home, axis=1),
+            node_int=sim._node_int, measured_s=m["measured_s"])
+    return dict(layout=layout, M=M, Emax=Emax, K=K, seed=seed, coord=coord, replan=replan, divert=int(divert), q=q, belief=belief, tau=tau, planner=planner, L=L, Th=Th,
+        J=m["J_timeavg"], J_age=m["J_age"], J_event=m["J_event"], n_replans=m["n_replans"],
+        n_diverts=m.get("n_diverts", 0), n_never=m["n_never_visited"], share_never=m["share_J_never_visited"],
+        n_reach_inf=m["n_reach_infeasible"], K_reach_i=m["K_cov_instance"],
+        K_commute_i=m["K_commute_instance"], r_max=m["r_max_instance"], r_c=m["r_c_measured"],
+        rmax_over_rc=m["rmax_over_rc"], regime_bnd=m["regime_boundary"], P_bar=m["P_bar"],
+        dup_frac=m["dup_frac"], trunc_frac=m["trunc_frac"], empty_frac=m["empty_frac"],
+        T_s_over_t_c=m["T_s_over_t_c"], mean_n=m["mean_n_visited"], catch_rate=m["catch_rate"],
+        T_rev=m["T_rev"], n_sorties=m["n_sorties"], secs=time.time()-t)
+
+def parse_seeds(s):
+    if "-" in s: a, b = s.split("-"); return list(range(int(a), int(b)+1))
+    return [int(x) for x in s.split(",")]
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("out"); ap.add_argument("--layouts", nargs="+", default=["paper"])
+    ap.add_argument("--M", nargs="+", type=int, default=[100])
+    ap.add_argument("--Emax", nargs="+", type=float, default=[1.5e6])
+    ap.add_argument("--seeds", default="1-12"); ap.add_argument("--coord", default="exclude")
+    ap.add_argument("--replan", default="launch", choices=["launch","per_leg_greedy","per_leg_sa"])
+    ap.add_argument("--divert", type=int, default=0, help="1 = mid-leg diversion on (needs --replan per_leg_sa)")
+    ap.add_argument("--q", type=float, default=0.0); ap.add_argument("--belief", default="prior", choices=["none","prior","kernel"])
+    ap.add_argument("--K", nargs="+", type=int, default=None, help="fixed K list (skips auto range)")
+    ap.add_argument("--tau", type=float, default=0.0, help="mean event lifetime in MINUTES (0 = default 45-90 min)")
+    ap.add_argument("--L", type=float, default=DynParams.L, help="field side in metres")
+    def _planner_arg(v):
+        # fixed variants, plus any deterministic CP-SAT budget: cpsat_d<seconds>, e.g. cpsat_d45
+        known = {"sa","sa_norepair","greedy","sa_nolambda","sa_launchdwell","sa_sqrt","rr_tour","rr_sweep","cluster_patrol","liu_mpga","sa_terr_km","sa_terr_bal","terr_due","sa_whittle","cyc","cyc_noopt","cyc_sector0"}
+        if v in known:
+            return v
+        if v.startswith("cpsat_d"):
+            try:
+                float(v[len("cpsat_d"):])
+            except ValueError:
+                raise argparse.ArgumentTypeError(f"bad CP-SAT budget in {v!r}")
+            return v
+        raise argparse.ArgumentTypeError(f"unknown planner {v!r}")
+
+    ap.add_argument("--planner", default="sa", type=_planner_arg)
+    ap.add_argument("--Th", type=float, default=12*3600); ap.add_argument("--iters", type=int, default=1200)
+    ap.add_argument("--procs", type=int, default=os.cpu_count())
+    a = ap.parse_args()
+    done = set()
+    if os.path.exists(a.out) and os.path.getsize(a.out) > 0:
+        with open(a.out) as f: hdr = f.readline().strip().split(",")
+        if hdr != FIELDS:
+            import subprocess; subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "fix_schema.py"), a.out], check=True)
+        with open(a.out) as f:
+            for row in csv.DictReader(f):
+                if "layout" not in row: continue   # tolerate a headerless/partial file
+                done.add((row["layout"], int(row["M"]), float(row["Emax"]), int(row["K"]), int(row["seed"]), row["coord"], row.get("replan","launch"), int(row.get("divert",0)), float(row.get("q",0)), row.get("belief","prior"), float(row.get("tau",0)), row.get("planner","sa"), float(row.get("L",DynParams.L)), float(row["Th"])))
+    jobs = []
+    for layout, M, Emax, seed in itertools.product(a.layouts, a.M, a.Emax, parse_seeds(a.seeds)):
+        for K in (a.K if a.K else k_range(layout, M, Emax, seed, a.L)):
+            key = (layout, M, Emax, K, seed, a.coord, a.replan, a.divert, a.q, a.belief, a.tau, a.planner, a.L, a.Th)
+            if key not in done: jobs.append(key + (a.iters,))
+    # biggest first so the pool tail is short
+    jobs.sort(key=lambda j: -j[1])
+    print(f"{len(jobs)} runs to do ({len(done)} already in {a.out})", flush=True)
+    new = (not os.path.exists(a.out)) or os.path.getsize(a.out) == 0
+    with open(a.out, "a", newline="") as f, Pool(a.procs) as pool:
+        w = csv.DictWriter(f, fieldnames=FIELDS)
+        if new: w.writeheader()
+        for i, row in enumerate(pool.imap_unordered(one, jobs)):
+            w.writerow(row); f.flush()
+            if i % 10 == 0: print(f"[{i+1}/{len(jobs)}] {row['layout']} M={row['M']} E={row['Emax']:.1e} K={row['K']} s={row['seed']} J={row['J']:.3e} {row['secs']:.0f}s", flush=True)

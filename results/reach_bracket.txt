@@ -1,0 +1,15 @@
+K_flight/K_reach in [1.025, 1.072]; bracket contains an integer in 119 of 272
+full-buffer K_reach
+  all      n=272 exact 0.574 within-one 0.809 bias +1.99
+  primary  n=240 exact 0.558 within-one 0.783 bias +2.21
+  paper    n= 96 exact 0.792 within-one 1.000 bias +0.19
+  ring     n= 72 exact 0.444 within-one 0.708 bias +0.93
+  core     n= 72 exact 0.361 within-one 0.569 bias +6.19
+  Lsweep   n= 32 exact 0.688 within-one 1.000 bias +0.31
+flight-only K_flight
+  all      n=272 exact 0.651 within-one 0.809 bias +1.76
+  primary  n=240 exact 0.633 within-one 0.783 bias +1.98
+  paper    n= 96 exact 0.833 within-one 1.000 bias -0.08
+  ring     n= 72 exact 0.444 within-one 0.708 bias +0.93
+  core     n= 72 exact 0.556 within-one 0.569 bias +5.78
+  Lsweep   n= 32 exact 0.781 within-one 1.000 bias +0.09

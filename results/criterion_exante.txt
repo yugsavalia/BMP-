@@ -1,0 +1,34 @@
+--- banked
+  paper pass               n= 60 median   0.0% p90   4.6% max  13.3% <5%  92%
+  paper flagged            n= 32 median   0.0% p90   0.9% max   6.8% <5%  94%
+  core pass                n= 43 median   0.0% p90  18.2% max  27.0% <5%  60%
+  core flagged             n= 29 median  51.1% p90 129.0% max 176.0% <5%   3%
+  regret >10%: 41 instances, passed (missed) 13
+  regret >20%: 28 instances, passed (missed)  3
+  regret >30%: 22 instances, passed (missed)  0; max regret among passes 27.0%
+--- corrected_KR
+  paper pass               n= 33 median   0.0% p90   3.9% max  13.3% <5%  94%
+  paper flagged            n= 59 median   0.0% p90   4.2% max   9.9% <5%  92%
+  core pass                n= 26 median   0.0% p90  19.9% max  27.0% <5%  58%
+  core flagged             n= 46 median  25.8% p90 126.3% max 176.0% <5%  26%
+  regret >10%: 41 instances, passed (missed)  9
+  regret >20%: 28 instances, passed (missed)  2
+  regret >30%: 22 instances, passed (missed)  0; max regret among passes 27.0%
+--- KG
+  paper pass               n= 12 median   0.0% p90   6.9% max  13.3% <5%  83%
+  paper flagged            n= 80 median   0.0% p90   4.2% max   9.9% <5%  94%
+  core pass                n= 16 median   0.0% p90  21.4% max  27.0% <5%  56%
+  core flagged             n= 56 median  19.0% p90 113.3% max 176.0% <5%  32%
+  regret >10%: 41 instances, passed (missed)  5
+  regret >20%: 28 instances, passed (missed)  2
+  regret >30%: 22 instances, passed (missed)  0; max regret among passes 27.0%
+--- global
+  paper pass               n= 58 median   0.0% p90   4.2% max  13.3% <5%  93%
+  paper flagged            n= 34 median   0.0% p90   1.0% max   6.8% <5%  91%
+  core pass                n= 28 median   0.0% p90  21.4% max  27.0% <5%  57%
+  core flagged             n= 44 median  31.1% p90 126.3% max 176.0% <5%  25%
+  regret >10%: 41 instances, passed (missed) 10
+  regret >20%: 28 instances, passed (missed)  3
+  regret >30%: 22 instances, passed (missed)  0; max regret among passes 27.0%
+
+Result-1 interval [K0, K_R] contains the measured argmin in 145/164 reach-bound instances

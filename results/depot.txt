@@ -1,0 +1,7 @@
+== C:\Users\HELLO\OneDrive\Desktop\paper_implementation\data\depot_q.csv: n=216  measured inputs: exact 0.56 within-one 0.95 | ex-ante: exact 0.57 within-one 0.95 | regret median 0.0% max 58.6% | censored 0
+  paper n= 72 exact 0.88  within-one 1.00  bias -0.12  regret median 0.0% p90 1.9%
+  core  n= 72 exact 0.65  within-one 0.92  bias -0.25  regret median 0.0% p90 16.6%
+  ring  n= 72 exact 0.17  within-one 0.94  bias +0.89  regret median 10.0% p90 21.3%
+== C:\Users\HELLO\OneDrive\Desktop\paper_implementation\data\depot_e.csv: n=48  measured inputs: exact 0.42 within-one 0.98 | ex-ante: exact 0.42 within-one 0.98 | regret median 6.0% max 60.0% | censored 0
+  paper n= 24 exact 0.83  within-one 1.00  bias +0.08  regret median 0.0% p90 1.1%
+  ring  n= 24 exact 0.00  within-one 0.96  bias +1.04  regret median 20.9% p90 50.2%

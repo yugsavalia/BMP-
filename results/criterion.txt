@@ -1,0 +1,42 @@
+--- banked
+  paper pass               n= 60 median   0.0% p90   4.6% max  13.3% <5%  92%
+  paper flagged            n= 32 median   0.0% p90   0.9% max   6.8% <5%  94%
+  core pass                n= 43 median   0.0% p90  18.2% max  27.0% <5%  60%
+  core flagged             n= 29 median  51.1% p90 129.0% max 176.0% <5%   3%
+  regret >10%: 41 instances, passed (missed) 13
+  regret >20%: 28 instances, passed (missed)  3
+  regret >30%: 22 instances, passed (missed)  0; max regret among passes 27.0%
+--- corrected_KR
+  paper pass               n= 12 median   0.0% p90   6.9% max  13.3% <5%  83%
+  paper flagged            n= 80 median   0.0% p90   4.2% max   9.9% <5%  94%
+  core pass                n= 16 median   0.0% p90  21.4% max  27.0% <5%  56%
+  core flagged             n= 56 median  19.0% p90 113.3% max 176.0% <5%  32%
+  regret >10%: 41 instances, passed (missed)  5
+  regret >20%: 28 instances, passed (missed)  2
+  regret >30%: 22 instances, passed (missed)  0; max regret among passes 27.0%
+--- KG
+  paper pass               n=  6 median   0.0% p90  13.3% max  13.3% <5%  83%
+  paper flagged            n= 86 median   0.0% p90   4.2% max   9.9% <5%  93%
+  core pass                n= 15 median   0.0% p90  21.4% max  27.0% <5%  53%
+  core flagged             n= 57 median  18.2% p90 113.3% max 176.0% <5%  33%
+  regret >10%: 41 instances, passed (missed)  5
+  regret >20%: 28 instances, passed (missed)  2
+  regret >30%: 22 instances, passed (missed)  0; max regret among passes 27.0%
+--- global
+  paper pass               n= 50 median   0.0% p90   4.6% max  13.3% <5%  92%
+  paper flagged            n= 42 median   0.0% p90   1.0% max   6.8% <5%  93%
+  core pass                n= 25 median   0.0% p90  21.4% max  27.0% <5%  60%
+  core flagged             n= 47 median  24.4% p90 126.3% max 176.0% <5%  26%
+  regret >10%: 41 instances, passed (missed)  8
+  regret >20%: 28 instances, passed (missed)  3
+  regret >30%: 22 instances, passed (missed)  0; max regret among passes 27.0%
+
+Result-1 interval [K0, K_R] contains the measured argmin in 163/164 reach-bound instances
+paper & pass & 50 & 0.0\% & 4.6\% & 13.3\% & 92\%\\
+paper & flagged & 42 & 0.0\% & 1.0\% & 6.8\% & 93\%\\
+core & pass & 25 & 0.0\% & 21.4\% & 27.0\% & 60\%\\
+core & flagged & 47 & 24.4\% & 126.3\% & 176.0\% & 26\%\\
+ring & (commute-bound) & 72 & 2.0\% & 22.4\% & 30.6\% & 58\%\\
+\midrule
+all reach-bound, test passes &  & 75 & 0.0\% & 10.2\% & 27.0\% & 81\%\\
+all reach-bound, flagged &  & 89 & 0.0\% & 84.4\% & 176.0\% & 57\%\\

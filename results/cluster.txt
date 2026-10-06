@@ -1,0 +1,13 @@
+all    n=216 | cluster~SA exact 0.49 w1 0.74 mean diff -1.58 | cluster~rule exact 0.49 w1 0.84 | J own-optimum cluster/SA-1 median -2.4% (SA lower in 94/216) | same-K median +0.3% over 2349 runs
+paper  n= 72 | cluster~SA exact 0.43 w1 0.82 mean diff -0.75 | cluster~rule exact 0.49 w1 0.85 | J own-optimum cluster/SA-1 median +31.9% (SA lower in 59/72) | same-K median +11.5% over 672 runs
+ring   n= 72 | cluster~SA exact 0.44 w1 0.72 mean diff -0.88 | cluster~rule exact 0.56 w1 0.89 | J own-optimum cluster/SA-1 median -4.3% (SA lower in 18/72) | same-K median +7.1% over 503 runs
+core   n= 72 | cluster~SA exact 0.60 w1 0.67 mean diff -3.11 | cluster~rule exact 0.43 w1 0.78 | J own-optimum cluster/SA-1 median -31.8% (SA lower in 17/72) | same-K median -10.1% over 1174 runs
+cluster within one of rule             +0.838  95% [+0.796, +0.880]
+cluster within one of SA               +0.736  95% [+0.690, +0.782]
+paired: cluster~rule minus SA~rule     +0.065  95% [+0.023, +0.106]
+  paper M=100 1.5MJ K=2: SA mean J 1.634e+06, cluster 1.757e+06, SA lower by +7.0%
+  paper M=100 1.5MJ K=3: SA mean J 9.943e+05, cluster 1.217e+06, SA lower by +18.3%
+  paper M=100 1.5MJ K=4: SA mean J 7.393e+05, cluster 1.103e+06, SA lower by +33.0%
+  paper M=100 1.5MJ K=5: SA mean J 8.453e+05, cluster 1.358e+06, SA lower by +37.7%
+  paper M=100 1.5MJ K=6: SA mean J 1.551e+06, cluster 2.036e+06, SA lower by +23.8%
+  paper M=100 1.5MJ K=7: SA mean J 3.091e+06, cluster 3.578e+06, SA lower by +13.6%
